@@ -97,16 +97,15 @@ insertCohortDefinitionInPackage <- function(definitionId,
     dir.create("inst/cohorts", recursive = TRUE)
   }
   fileConn <- file(file.path("inst/cohorts", paste(name, "json", sep = ".")))
-  writeLines(json$expression, fileConn)
+  writeLines(RJSONIO::toJSON(json$expression, digits = 23), fileConn)
   close(fileConn)
 
   ### Fetch SQL by posting JSON object ###
-  parsedExpression <- RJSONIO::fromJSON(json$expression)
   if (generateStats) {
-    jsonBody <- RJSONIO::toJSON(list(expression = parsedExpression,
+    jsonBody <- RJSONIO::toJSON(list(expression = json$expression,
                                      options = list(generateStats = TRUE)), digits = 23)
   } else {
-    jsonBody <- RJSONIO::toJSON(list(expression = parsedExpression), digits = 23)
+    jsonBody <- RJSONIO::toJSON(list(expression = json$expression), digits = 23)
   }
   httpheader <- c(Accept = "application/json; charset=UTF-8", `Content-Type` = "application/json")
   url <- paste(baseUrl, "cohortdefinition", "sql", sep = "/")
@@ -117,7 +116,7 @@ insertCohortDefinitionInPackage <- function(definitionId,
     dir.create("inst/sql/sql_server", recursive = TRUE)
   }
 
-  fileConn <- file(file.path("inst/sql/sql_server", paste(name, "sql", sep = ".")))
+  fileConn <- file(file.path("inst/sql/sql_server", paste(name, "sql", sep = ".")), open="wb")
   writeLines(sql, fileConn)
   close(fileConn)
 }
