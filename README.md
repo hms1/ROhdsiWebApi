@@ -6,13 +6,14 @@ ROhdsiWebApi
 
 Introduction
 =============
-An R package with functions to call WebAPI web services that support concept sets, cohort definitions, and cohort characterizations. For most functions, you will need to provide the baseUrl, which is the URL endpoint for your WebAPI instance. An example is "http://server.org:80/WebAPI".
+An R package with functions to call WebAPI web services that support vocabulary, concept sets, cohort definitions, and cohort characterizations. For most functions, you will need to provide the baseUrl, which is the URL endpoint for your WebAPI instance. An example is "http://server.org:80/WebAPI".
 
 
 Features
 ========
 
-- Functions for interfacing with WebAPI
+- Functions for interfacing with WebAPI sources
+- Functions for interfacing with the Vocabulary in Atlas
 - Functions for interfacing with Concept Sets in Atlas
 - Functions for interfacing with Cohort Definitions in Atlas
 - Functions for interfacing with Cohort Characterizations in Atlas
