@@ -78,9 +78,15 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
 
 .hasRelationship <- function(relationships, relationshipId, minDistance, maxDistance) {
   matches <- relationships[sapply(relationships, function(r) {
-    r$RELATIONSHIP_NAME == relationshipId &
-      r$RELATIONSHIP_DISTANCE >= minDistance &
-      r$RELATIONSHIP_DISTANCE <= maxDistance
+    
+    if (is.null(maxDistance)) {
+      r$RELATIONSHIP_NAME == relationshipId &
+        r$RELATIONSHIP_DISTANCE >= minDistance
+    } else {
+      r$RELATIONSHIP_NAME == relationshipId &
+        r$RELATIONSHIP_DISTANCE >= minDistance &
+        r$RELATIONSHIP_DISTANCE <= maxDistance  
+    }
   })]
   
   length(matches) > 0
@@ -99,8 +105,12 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
 #' @param targetVocabularyId     The classification vocabulary id to map to
 #' @param targetConceptClassId   (OPTIONAL) The concept class id of the classification term
 #' @param relationshipId         The name of the concept relationship to filter by. Refer to the concept_relationship table for a list of options.
-#' @param minDistance            The minimum distance from the standard concept for the classification term
-#' @param maxDistance            The maximum distance from the standard concept for the classification term
+#' @param minDistance            The minimum hierarchy distance from the source code's standard concepts 
+#'                               for the classification term. 
+#'                               Default is 0 (meaning there is no minimum distance)
+#' @param maxDistance            The maximum hierarchy distance from the source code's standard concepts 
+#'                               for the classification term. 
+#'                               Default is NULL (meaning there is no maximum distance)
 #' 
 #' @return A data frame summarizing the classification terms
 #' 
@@ -111,8 +121,16 @@ getClassificationFromSourceCode <- function(baseUrl,
                                             targetVocabularyId,
                                             targetConceptClassId = NULL,
                                             relationshipId = "Has ancestor of",
-                                            minDistance = 1,
-                                            maxDistance = 1) {
+                                            minDistance = 0,
+                                            maxDistance = NULL) {
+  
+  .checkBaseUrl(baseUrl)
+  
+  if (!is.null(maxDistance)) {
+    if (minDistance > maxDistance) {
+      stop("minDistance cannot be greater than maxDistance")
+    }  
+  }
   
   # obtain source concept id ------------------------------------
   sourceConcept <- getSourceConcept(baseUrl, sourceCode, sourceVocabularyId)

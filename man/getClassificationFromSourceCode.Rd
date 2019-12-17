@@ -6,8 +6,8 @@
 \usage{
 getClassificationFromSourceCode(baseUrl, sourceCode, sourceVocabularyId,
   targetVocabularyId, targetConceptClassId = NULL,
-  relationshipId = "Has ancestor of", minDistance = 1,
-  maxDistance = 1)
+  relationshipId = "Has ancestor of", minDistance = 0,
+  maxDistance = NULL)
 }
 \arguments{
 \item{baseUrl}{The base URL for the WebApi instance, for example:
@@ -21,11 +21,15 @@ getClassificationFromSourceCode(baseUrl, sourceCode, sourceVocabularyId,
 
 \item{targetConceptClassId}{(OPTIONAL) The concept class id of the classification term}
 
-\item{relationshipId}{The name of the concept relationship to filter by}
+\item{relationshipId}{The name of the concept relationship to filter by. Refer to the concept_relationship table for a list of options.}
 
-\item{minDistance}{The minimum distance apart for the classification term}
+\item{minDistance}{The minimum hierarchy distance from the source code's standard concepts 
+for the classification term. 
+Default is 0 (meaning there is no minimum distance)}
 
-\item{maxDistance}{The maximum distance apart for the classification term}
+\item{maxDistance}{The maximum hierarchy distance from the source code's standard concepts 
+for the classification term. 
+Default is NULL (meaning there is no maximum distance)}
 }
 \value{
 A data frame summarizing the classification terms
