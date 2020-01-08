@@ -135,6 +135,10 @@ getClassificationFromSourceCode <- function(baseUrl,
   # obtain source concept id ------------------------------------
   sourceConcept <- getSourceConcept(baseUrl, sourceCode, sourceVocabularyId)
   
+  if (length(sourceConcept) == 0) {
+    return (data.frame())
+  }
+  
   # obtain standard concept(s) -------------------------------------
   standardConcepts <- getMappedStandardConcepts(baseUrl, sourceConcept$CONCEPT_ID)
   
