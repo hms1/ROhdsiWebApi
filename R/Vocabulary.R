@@ -1,6 +1,6 @@
 # @file Vocabulary
 #
-# Copyright 2019 Observational Health Data Sciences and Informatics
+# Copyright 2020 Observational Health Data Sciences and Informatics
 #
 # This file is part of ROhdsiWebApi
 # 
@@ -93,6 +93,20 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
 }
 
 
+.removeLowerPriorityTerms <- function(sourceConceptId, df, targetConceptClassIds) {
+  priorities <- data.frame(
+    PRIORITY = c(1:length(targetConceptClassIds)),
+    CONCEPT_CLASS_ID = targetConceptClassIds, stringsAsFactors = FALSE
+  )
+  
+  joined <- dplyr::inner_join(x = df, y = priorities, by = "CONCEPT_CLASS_ID")
+  classificationConceptId <- with(joined, CLASSIFICATION_CONCEPT_ID[PRIORITY == min(PRIORITY)])
+  df <- df[df$SOURCE_CONCEPT_ID == sourceConceptId & df$CLASSIFICATION_CONCEPT_ID == classificationConceptId,]
+  
+  df
+}
+
+
 #' Get classification term from source code
 #' 
 #' @details For a source code, obtain mapped classification term(s) by traversing from source code to
@@ -103,7 +117,7 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
 #' @param sourceCode             A single source code
 #' @param sourceVocabularyId     The name of the source vocabulary id for the source code (e.g. ICD9CM, ICD10CM)
 #' @param targetVocabularyId     The classification vocabulary id to map to
-#' @param targetConceptClassId   (OPTIONAL) The concept class id of the classification term
+#' @param targetConceptClassIds  (OPTIONAL) An array of the concept class id(s) of the classification term
 #' @param relationshipId         The name of the concept relationship to filter by. Refer to the concept_relationship table for a list of options.
 #' @param minDistance            The minimum hierarchy distance from the source code's standard concepts 
 #'                               for the classification term. 
@@ -111,6 +125,8 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
 #' @param maxDistance            The maximum hierarchy distance from the source code's standard concepts 
 #'                               for the classification term. 
 #'                               Default is NULL (meaning there is no maximum distance)
+#' @param selectOnPriority       If TRUE and targetConceptClassIds consists of 2 or more selections, 
+#'                               we will select one classification term only, using the targetConceptClassIds as a priority list.
 #' 
 #' @return A data frame summarizing the classification terms
 #' 
@@ -119,10 +135,11 @@ getClassificationFromSourceCode <- function(baseUrl,
                                             sourceCode, 
                                             sourceVocabularyId,
                                             targetVocabularyId,
-                                            targetConceptClassId = NULL,
+                                            targetConceptClassIds = c(),
                                             relationshipId = "Has ancestor of",
                                             minDistance = 0,
-                                            maxDistance = NULL) {
+                                            maxDistance = NULL,
+                                            selectOnPriority = FALSE) {
   
   .checkBaseUrl(baseUrl)
   
@@ -155,8 +172,8 @@ getClassificationFromSourceCode <- function(baseUrl,
       
       # get ancestors  ---------------------
       ancestors <- relatedConcept[sapply(relatedConcept, function(j) {
-        if (!is.null(targetConceptClassId)) {
-          j$VOCABULARY_ID == targetVocabularyId & j$CONCEPT_CLASS_ID == targetConceptClassId & 
+        if (length(targetConceptClassIds) > 0) {
+          j$VOCABULARY_ID == targetVocabularyId & j$CONCEPT_CLASS_ID %in% targetConceptClassIds & 
             .hasRelationship(j$RELATIONSHIPS, relationshipId, minDistance, maxDistance)
         } else {
           j$VOCABULARY_ID == targetVocabularyId & 
@@ -203,8 +220,14 @@ getClassificationFromSourceCode <- function(baseUrl,
     do.call(rbind.data.frame, matchedTerms)
   })
   
-  do.call(rbind.data.frame, classificationTerms)
+  df <- do.call(rbind.data.frame, classificationTerms)
   
+  if (selectOnPriority & length(targetConceptClassIds) > 1) {
+    df <- .removeLowerPriorityTerms(sourceConceptId = sourceConcept$CONCEPT_ID, 
+                                    df = df, targetConceptClassIds = targetConceptClassIds)
+  }
+  
+  df
 }
 
 

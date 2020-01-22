@@ -5,9 +5,9 @@
 \title{Get classification term from source code}
 \usage{
 getClassificationFromSourceCode(baseUrl, sourceCode, sourceVocabularyId,
-  targetVocabularyId, targetConceptClassId = NULL,
+  targetVocabularyId, targetConceptClassIds = c(),
   relationshipId = "Has ancestor of", minDistance = 0,
-  maxDistance = NULL)
+  maxDistance = NULL, selectOnPriority = FALSE)
 }
 \arguments{
 \item{baseUrl}{The base URL for the WebApi instance, for example:
@@ -19,7 +19,7 @@ getClassificationFromSourceCode(baseUrl, sourceCode, sourceVocabularyId,
 
 \item{targetVocabularyId}{The classification vocabulary id to map to}
 
-\item{targetConceptClassId}{(OPTIONAL) The concept class id of the classification term}
+\item{targetConceptClassIds}{(OPTIONAL) An array of the concept class id(s) of the classification term}
 
 \item{relationshipId}{The name of the concept relationship to filter by. Refer to the concept_relationship table for a list of options.}
 
@@ -30,6 +30,9 @@ Default is 0 (meaning there is no minimum distance)}
 \item{maxDistance}{The maximum hierarchy distance from the source code's standard concepts 
 for the classification term. 
 Default is NULL (meaning there is no maximum distance)}
+
+\item{selectOnPriority}{If TRUE and targetConceptClassIds consists of 2 or more selections, 
+we will select one classification term only, using the targetConceptClassIds as a priority list.}
 }
 \value{
 A data frame summarizing the classification terms
