@@ -76,9 +76,8 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
   httr::content(json)
 }
 
-.hasRelationship <- function(relationships, relationshipId, minDistance, maxDistance) {
+.getRelationshipDistance <- function(relationships, relationshipId, minDistance, maxDistance) {
   matches <- relationships[sapply(relationships, function(r) {
-    
     if (is.null(maxDistance)) {
       r$RELATIONSHIP_NAME == relationshipId &
         r$RELATIONSHIP_DISTANCE >= minDistance
@@ -89,7 +88,12 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
     }
   })]
   
-  length(matches) > 0
+  if (length(matches) > 0) {
+    matches <- as.data.frame(dplyr::bind_rows(matches))
+    min(matches$RELATIONSHIP_DISTANCE)
+  } else {
+    NA
+  } 
 }
 
 
@@ -101,7 +105,7 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
   
   joined <- dplyr::inner_join(x = df, y = priorities, by = "CONCEPT_CLASS_ID")
   classificationConceptId <- with(joined, CLASSIFICATION_CONCEPT_ID[PRIORITY == min(PRIORITY)])
-  df <- df[df$SOURCE_CONCEPT_ID == sourceConceptId & df$CLASSIFICATION_CONCEPT_ID == classificationConceptId,]
+  df <- df[df$SOURCE_CONCEPT_ID == sourceConceptId & df$CLASSIFICATION_CONCEPT_ID %in% classificationConceptId,]
   
   df
 }
@@ -153,17 +157,18 @@ getClassificationFromSourceCode <- function(baseUrl,
   sourceConcept <- getSourceConcept(baseUrl, sourceCode, sourceVocabularyId)
   
   if (length(sourceConcept) == 0) {
-    return (data.frame(SOURCE_CONCEPT_ID = c(0),
-                       SOURCE_CODE = c(sourceCode),
-                       SOURCE_CODE_NAME = c("Not Found"),
-                       SOURCE_VOCABULARY_ID = c(sourceVocabularyId),
-                       STANDARD_CONCEPT_ID = c(0),
-                       STANDARD_CODE = c(NA),
-                       STANDARD_NAME = c("Not Found"),
+    return (data.frame(SOURCE_CONCEPT_ID = 0,
+                       SOURCE_CODE = sourceCode,
+                       SOURCE_CODE_NAME = NA,
+                       SOURCE_VOCABULARY_ID = sourceVocabularyId,
+                       STANDARD_CONCEPT_ID = 0,
+                       STANDARD_CODE = NA,
+                       STANDARD_NAME = NA,
                        CLASSIFICATION_CONCEPT_ID = 0,
-                       CLASSIFICATION_CODE = c(NA),
-                       CLASSIFICATION_NAME = c("Not Found"),
-                       CONCEPT_CLASS_ID = c("Not Found")))
+                       CLASSIFICATION_CODE = NA,
+                       CLASSIFICATION_NAME = NA,
+                       CONCEPT_CLASS_ID = NA,
+                       stringsAsFactors = FALSE))
   }
   
   # obtain standard concept(s) -------------------------------------
@@ -171,16 +176,17 @@ getClassificationFromSourceCode <- function(baseUrl,
   
   if (length(standardConcepts) == 0) {
     return (data.frame(SOURCE_CONCEPT_ID = c(sourceConcept$CONCEPT_ID),
-               SOURCE_CODE = c(sourceCode),
-               SOURCE_CODE_NAME = c(sourceConcept$CONCEPT_NAME),
-               SOURCE_VOCABULARY_ID = c(sourceVocabularyId),
-               STANDARD_CONCEPT_ID = c(0),
-               STANDARD_CODE = c("Not Found"),
-               STANDARD_NAME = c("Not Found"),
+               SOURCE_CODE = sourceCode,
+               SOURCE_CODE_NAME = sourceConcept$CONCEPT_NAME,
+               SOURCE_VOCABULARY_ID = sourceVocabularyId,
+               STANDARD_CONCEPT_ID = 0,
+               STANDARD_CODE = NA,
+               STANDARD_NAME = NA,
                CLASSIFICATION_CONCEPT_ID = 0,
-               CLASSIFICATION_CODE = c("Not Found"),
-               CLASSIFICATION_NAME = c("Not Found"),
-               CONCEPT_CLASS_ID = c("Not Found")))
+               CLASSIFICATION_CODE = NA,
+               CLASSIFICATION_NAME = NA,
+               CONCEPT_CLASS_ID = NA,
+               stringsAsFactors = FALSE))
   }
   
   
@@ -197,22 +203,28 @@ getClassificationFromSourceCode <- function(baseUrl,
       # get ancestors  ---------------------
       ancestors <- relatedConcept[sapply(relatedConcept, function(j) {
         if (length(targetConceptClassIds) > 0) {
-          j$VOCABULARY_ID == targetVocabularyId & j$CONCEPT_CLASS_ID %in% targetConceptClassIds & 
-            .hasRelationship(j$RELATIONSHIPS, relationshipId, minDistance, maxDistance)
+          j$VOCABULARY_ID == targetVocabularyId & j$CONCEPT_CLASS_ID %in% targetConceptClassIds
         } else {
-          j$VOCABULARY_ID == targetVocabularyId & 
-            .hasRelationship(j$RELATIONSHIPS, relationshipId, minDistance, maxDistance)
+          j$VOCABULARY_ID == targetVocabularyId
         }
       })]
       
       results <- lapply(ancestors, function(ancestor) {
-        distance <- data.frame(
-          CONCEPT_ID = ancestor$CONCEPT_ID,
-          CONCEPT_NAME = ancestor$CONCEPT_NAME,
-          CONCEPT_CODE = ancestor$CONCEPT_CODE,
-          CONCEPT_CLASS_ID = ancestor$CONCEPT_CLASS_ID,
-          stringsAsFactors = FALSE
-        )
+        
+        distance <- .getRelationshipDistance(ancestor$RELATIONSHIPS, relationshipId, minDistance, maxDistance)
+        
+        if (is.na(distance)) {
+          data.frame()
+        } else {
+          data.frame(
+            CONCEPT_ID = ancestor$CONCEPT_ID,
+            CONCEPT_NAME = ancestor$CONCEPT_NAME,
+            CONCEPT_CODE = ancestor$CONCEPT_CODE,
+            CONCEPT_CLASS_ID = ancestor$CONCEPT_CLASS_ID,
+            RELATIONSHIP_DISTANCE = distance,
+            stringsAsFactors = FALSE
+          ) 
+        }
       })
       result <- do.call(rbind.data.frame, results)
       
@@ -236,19 +248,22 @@ getClassificationFromSourceCode <- function(baseUrl,
                       CLASSIFICATION_CONCEPT_ID = CONCEPT_ID,
                       CLASSIFICATION_CODE = CONCEPT_CODE,
                       CLASSIFICATION_NAME = CONCEPT_NAME,
-                      CONCEPT_CLASS_ID = CONCEPT_CLASS_ID)  
+                      CONCEPT_CLASS_ID = CONCEPT_CLASS_ID,
+                      RELATIONSHIP_DISTANCE = RELATIONSHIP_DISTANCE)  
       } else {
-        data.frame(SOURCE_CONCEPT_ID = c(sourceConcept$CONCEPT_ID),
-                   SOURCE_CODE = c(sourceCode),
-                   SOURCE_CODE_NAME = c(sourceConcept$CONCEPT_NAME),
-                   SOURCE_VOCABULARY_ID = c(sourceVocabularyId),
-                   STANDARD_CONCEPT_ID = c(standardConcept$CONCEPT_ID),
-                   STANDARD_CODE = c(standardConcept$CONCEPT_CODE),
-                   STANDARD_NAME = c(standardConcept$CONCEPT_NAME),
+        data.frame(SOURCE_CONCEPT_ID = sourceConcept$CONCEPT_ID,
+                   SOURCE_CODE = sourceCode,
+                   SOURCE_CODE_NAME = sourceConcept$CONCEPT_NAME,
+                   SOURCE_VOCABULARY_ID = sourceVocabularyId,
+                   STANDARD_CONCEPT_ID = standardConcept$CONCEPT_ID,
+                   STANDARD_CODE = standardConcept$CONCEPT_CODE,
+                   STANDARD_NAME = standardConcept$CONCEPT_NAME,
                    CLASSIFICATION_CONCEPT_ID = 0,
-                   CLASSIFICATION_CODE = c("Not Found"),
-                   CLASSIFICATION_NAME = c("Not Found"),
-                   CONCEPT_CLASS_ID = c("Not Found"))
+                   CLASSIFICATION_CODE = NA,
+                   CLASSIFICATION_NAME = NA,
+                   CONCEPT_CLASS_ID = NA,
+                   RELATIONSHIP_DISTANCE = NA,
+                   stringsAsFactors = FALSE)
       }
     })
     do.call(rbind.data.frame, matchedTerms)
@@ -258,7 +273,7 @@ getClassificationFromSourceCode <- function(baseUrl,
   
   if (nrow(df) > 0 & selectOnPriority & length(targetConceptClassIds) > 1) {
     
-    if (df[1,]$CLASSIFICATION_CODE != "Not Found") {
+    if (!is.na(df[1,]$CLASSIFICATION_CODE)) {
       df <- .removeLowerPriorityTerms(sourceConceptId = sourceConcept$CONCEPT_ID, 
                                       df = df, targetConceptClassIds = targetConceptClassIds)  
     }
