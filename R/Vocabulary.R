@@ -186,6 +186,7 @@ getClassificationFromSourceCode <- function(baseUrl,
                CLASSIFICATION_CODE = NA,
                CLASSIFICATION_NAME = NA,
                CONCEPT_CLASS_ID = NA,
+               RELATIONSHIP_DISTANCE = NA,
                stringsAsFactors = FALSE))
   }
   
@@ -200,31 +201,29 @@ getClassificationFromSourceCode <- function(baseUrl,
     # get all of the matches within each set ------------------
     matchedTerms <- lapply(relatedConcepts, function(relatedConcept) {
       
+      relatedConcept <- lapply(relatedConcept, function(r) {
+        r$RELATIONSHIP_DISTANCE <- .getRelationshipDistance(r$RELATIONSHIPS, relationshipId, minDistance, maxDistance)
+        r
+      })
+      
       # get ancestors  ---------------------
       ancestors <- relatedConcept[sapply(relatedConcept, function(j) {
         if (length(targetConceptClassIds) > 0) {
-          j$VOCABULARY_ID == targetVocabularyId & j$CONCEPT_CLASS_ID %in% targetConceptClassIds
+          j$VOCABULARY_ID == targetVocabularyId & j$CONCEPT_CLASS_ID %in% targetConceptClassIds & !is.na(j$RELATIONSHIP_DISTANCE)
         } else {
-          j$VOCABULARY_ID == targetVocabularyId
+          j$VOCABULARY_ID == targetVocabularyId & !is.na(j$RELATIONSHIP_DISTANCE)
         }
       })]
       
       results <- lapply(ancestors, function(ancestor) {
-        
-        distance <- .getRelationshipDistance(ancestor$RELATIONSHIPS, relationshipId, minDistance, maxDistance)
-        
-        if (is.na(distance)) {
-          data.frame()
-        } else {
-          data.frame(
-            CONCEPT_ID = ancestor$CONCEPT_ID,
-            CONCEPT_NAME = ancestor$CONCEPT_NAME,
-            CONCEPT_CODE = ancestor$CONCEPT_CODE,
-            CONCEPT_CLASS_ID = ancestor$CONCEPT_CLASS_ID,
-            RELATIONSHIP_DISTANCE = distance,
-            stringsAsFactors = FALSE
-          ) 
-        }
+        data.frame(
+          CONCEPT_ID = ancestor$CONCEPT_ID,
+          CONCEPT_NAME = ancestor$CONCEPT_NAME,
+          CONCEPT_CODE = ancestor$CONCEPT_CODE,
+          CONCEPT_CLASS_ID = ancestor$CONCEPT_CLASS_ID,
+          RELATIONSHIP_DISTANCE = ancestor$RELATIONSHIP_DISTANCE,
+          stringsAsFactors = FALSE
+        ) 
       })
       result <- do.call(rbind.data.frame, results)
       
@@ -273,10 +272,14 @@ getClassificationFromSourceCode <- function(baseUrl,
   
   if (nrow(df) > 0 & selectOnPriority & length(targetConceptClassIds) > 1) {
     
-    if (!is.na(df[1,]$CLASSIFICATION_CODE)) {
-      df <- .removeLowerPriorityTerms(sourceConceptId = sourceConcept$CONCEPT_ID, 
-                                      df = df, targetConceptClassIds = targetConceptClassIds)  
-    }
+    # among mapped terms, reduce to only high priority concept classes ---------
+    
+    mappedDf <- df[df$CLASSIFICATION_CONCEPT_ID != 0,]
+    unmappedDf <- df[df$CLASSIFICATION_CONCEPT_ID == 0,]
+    
+    mappedDf <- .removeLowerPriorityTerms(sourceConceptId = sourceConcept$CONCEPT_ID, 
+                                    df = mappedDf, targetConceptClassIds = targetConceptClassIds)  
+    df <- rbind.data.frame(unmappedDf, mappedDf)
   }
   
   df
