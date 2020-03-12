@@ -103,9 +103,11 @@ getRelatedConcepts <- function(baseUrl, conceptId) {
     CONCEPT_CLASS_ID = targetConceptClassIds, stringsAsFactors = FALSE
   )
   
-  joined <- dplyr::inner_join(x = df, y = priorities, by = "CONCEPT_CLASS_ID")
-  classificationConceptId <- with(joined, CLASSIFICATION_CONCEPT_ID[PRIORITY == min(PRIORITY)])
-  df <- df[df$SOURCE_CONCEPT_ID == sourceConceptId & df$CLASSIFICATION_CONCEPT_ID %in% classificationConceptId,]
+  if (nrow(df) > 0) {
+    joined <- dplyr::inner_join(x = df, y = priorities, by = "CONCEPT_CLASS_ID")
+    classificationConceptId <- with(joined, CLASSIFICATION_CONCEPT_ID[PRIORITY == min(PRIORITY)])
+    df <- df[df$SOURCE_CONCEPT_ID == sourceConceptId & df$CLASSIFICATION_CONCEPT_ID %in% classificationConceptId,]  
+  }
   
   df
 }
@@ -168,6 +170,7 @@ getClassificationFromSourceCode <- function(baseUrl,
                        CLASSIFICATION_CODE = NA,
                        CLASSIFICATION_NAME = NA,
                        CONCEPT_CLASS_ID = NA,
+                       RELATIONSHIP_DISTANCE = NA,
                        stringsAsFactors = FALSE))
   }
   
@@ -279,7 +282,7 @@ getClassificationFromSourceCode <- function(baseUrl,
     
     mappedDf <- .removeLowerPriorityTerms(sourceConceptId = sourceConcept$CONCEPT_ID, 
                                     df = mappedDf, targetConceptClassIds = targetConceptClassIds)  
-    df <- rbind.data.frame(unmappedDf, mappedDf)
+    df <- rbind.data.frame(unmappedDf, mappedDf, stringsAsFactors = FALSE)
   }
   
   df
