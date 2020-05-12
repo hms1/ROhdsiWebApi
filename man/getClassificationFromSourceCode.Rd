@@ -4,10 +4,17 @@
 \alias{getClassificationFromSourceCode}
 \title{Get classification term from source code}
 \usage{
-getClassificationFromSourceCode(baseUrl, sourceCode, sourceVocabularyId,
-  targetVocabularyId, targetConceptClassIds = c(),
-  relationshipId = "Has ancestor of", minDistance = 0,
-  maxDistance = NULL, selectOnPriority = FALSE)
+getClassificationFromSourceCode(
+  baseUrl,
+  sourceCode,
+  sourceVocabularyId,
+  targetVocabularyId,
+  targetConceptClassIds = c(),
+  relationshipId = "Has ancestor of",
+  minDistance = 0,
+  maxDistance = NULL,
+  selectOnPriority = FALSE
+)
 }
 \arguments{
 \item{baseUrl}{The base URL for the WebApi instance, for example:

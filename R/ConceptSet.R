@@ -17,6 +17,39 @@
 # limitations under the License.
 
 
+#' Get the available concept sets
+#'
+#' @details
+#' Obtains the concept sets
+#'
+#' @param baseUrl        The base URL for the WebApi instance, for example:
+#'                       "http://server.org:80/WebAPI".
+#' @param searchPrefix   A search prefix to limit the concept sets by name
+#'
+#' @return
+#' A data frame of concept set names
+#'
+#' @export
+getConceptSets <- function(baseUrl, searchPrefix = "") {
+  .checkBaseUrl(baseUrl)
+  
+  url <- sprintf("%s/conceptset", baseUrl)
+  json <- httr::GET(url)
+  json <- httr::content(json)
+  
+  lists <- lapply(json, function(j) {
+    as.data.frame(j)
+  })
+  
+  df <- do.call(rbind, lists)
+  
+  if (searchPrefix != "") {
+    df <- sqldf::sqldf(sprintf("select * from df where name like '%s%%'", searchPrefix))
+  }
+  
+  df
+}
+
 #' Get a concept set's name from WebAPI
 #'
 #' @details
@@ -222,6 +255,48 @@ getConceptSetConceptIds <- function(baseUrl, setId, vocabSourceKey = NULL) {
   
   expression <- RJSONIO::toJSON(getConceptSetExpression(baseUrl = baseUrl, setId = setId), digits = 23)
   getSetExpressionConceptIds(baseUrl = baseUrl, expression = expression, vocabSourceKey = vocabSourceKey)
+}
+
+#' Get a concept set's included source codes
+#'
+#' @details
+#' Obtains the included source codes from a concept set
+#'
+#' @param baseUrl          The base URL for the WebApi instance, for example:
+#'                         "http://server.org:80/WebAPI".
+#' @param setId            The concept set id in Atlas.
+#' @param vocabSourceKey   The source key of the Vocabulary. By default, the priority Vocabulary is
+#'                         used.
+#' @param vocabularyIds    An array of source code vocabulary Ids to filter the results by
+#'
+#' @return
+#' A data frame of included source codes
+#' 
+#' @export
+getConceptSetsSourceCodes <- function(baseUrl, setId, vocabSourceKey = NULL, vocabularyIds = c()) {
+  .checkBaseUrl(baseUrl)
+  
+  if (missing(vocabSourceKey) || is.null(vocabSourceKey)) {
+    vocabSourceKey <- getPriorityVocabKey(baseUrl = baseUrl)
+  }
+  
+  expression <- RJSONIO::toJSON(getConceptSetExpression(baseUrl = baseUrl, setId = setId), digits = 23)
+  conceptIds <- getSetExpressionConceptIds(baseUrl = baseUrl, expression = expression, vocabSourceKey = vocabSourceKey)
+  
+  url <- sprintf("%1s/vocabulary/%2s/lookup/mapped", baseUrl, vocabSourceKey)
+  httpheader <- c(Accept = "application/json; charset=UTF-8", `Content-Type` = "application/json")
+  sourceCodes <- httr::POST(url, body = RJSONIO::toJSON(conceptIds, digits = 23), config = httr::add_headers(httpheader))
+  sourceCodes <- httr::content(sourceCodes)
+  
+  if (length(vocabularyIds > 0)) {
+    sourceCodes <- sourceCodes[sapply(sourceCodes, function(r) r$VOCABULARY_ID %in% vocabularyIds)]
+  }
+
+  lists <- lapply(sourceCodes, function(j) {
+    as.data.frame(j, stringsAsFactors = FALSE)
+  })
+  
+  return(do.call(rbind.data.frame, lists))
 }
 
 
