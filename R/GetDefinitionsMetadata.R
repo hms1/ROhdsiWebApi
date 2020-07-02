@@ -49,7 +49,9 @@ getDefinitionsMetadata <- function(baseUrl, category) {
 
   categoryUrl <- argument %>% dplyr::pull(.data$categoryUrl)
   url <- paste(baseUrl, categoryUrl, "?size=100000000", sep = "/")
-  request <- httr::GET(url)
+  request <- httr::GET(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                               Sys.getenv("ATLAS_USER"),
+                                                                               Sys.getenv("ATLAS_PASSWORD"))))
 
   if (!request$status == 200) {
     ParallelLogger::logError(argument$categoryFirstUpper,

@@ -59,10 +59,14 @@ cancelGeneration <- function(id, baseUrl, sourceKey, category) {
   url <- paste0(urlRoot, "/", sourceKey)
 
   if (argument$categoryStandard %in% c("cohort")) {
-    response <- httr::GET(url)
+    response <- httr::GET(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                                  Sys.getenv("ATLAS_USER"),
+                                                                                  Sys.getenv("ATLAS_PASSWORD"))))
   }
   if (argument$categoryStandard %in% c("characterization", "pathway", "incidenceRate")) {
-    response <- httr::DELETE(url)
+    response <- httr::DELETE(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                                     Sys.getenv("ATLAS_USER"),
+                                                                                     Sys.getenv("ATLAS_PASSWORD"))))
   }
   if (!response$status_code %in% c(200, 204)) {
     if (isValidId(ids = id, baseUrl = baseUrl, category = category)) {

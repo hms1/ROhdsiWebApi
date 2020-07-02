@@ -65,10 +65,14 @@ invokeGeneration <- function(id, baseUrl, sourceKey, category) {
   url <- paste0(urlRoot, "/", sourceKey)
 
   if (argument$categoryStandard %in% c("cohort", "incidenceRate")) {
-    response <- httr::GET(url)
+    response <- httr::GET(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                                  Sys.getenv("ATLAS_USER"),
+                                                                                  Sys.getenv("ATLAS_PASSWORD"))))
   }
   if (argument$categoryStandard %in% c("characterization", "pathway")) {
-    response <- httr::POST(url)
+    response <- httr::POST(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                                   Sys.getenv("ATLAS_USER"),
+                                                                                   Sys.getenv("ATLAS_PASSWORD"))))
   }
   if (!response$status_code == 200) {
     if (isValidId(ids = id, baseUrl = baseUrl, category = category)) {

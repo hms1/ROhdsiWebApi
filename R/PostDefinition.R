@@ -45,36 +45,59 @@ postDefinition <- function(baseUrl, name, category, definition) {
   .checkBaseUrl(baseUrl)
   arguments <- .getStandardCategories()
   argument <- arguments %>% dplyr::filter(.data$categoryStandard == category)
-
+  
   errorMessage <- checkmate::makeAssertCollection()
   checkmate::assertCharacter(name, add = errorMessage)
   checkmate::assertCharacter(category, add = errorMessage)
   checkmate::assertNames(x = category, subset.of = arguments$categoryStandard)
   checkmate::reportAssertions(errorMessage)
-
-  if (!category %in% c("cohort", "conceptSet")) {
+  
+  if (!category %in% c("cohort", "conceptSet","pathway")) {
     ParallelLogger::logError("Posting definitions of ", category, " is not supported.")
     stop()
   }
-
+  
   if ("expression" %in% names(definition)) {
     expression <- definition$expression
   } else {
     expression <- definition
   }
-  # convert R-object to JSON expression.
-  jsonExpression <- RJSONIO::toJSON(expression)
-  # create json body
-  json <- paste0("{\"name\":\"", as.character(name), "\",\"expressionType\": \"SIMPLE_EXPRESSION\", \"expression\":",
-                 jsonExpression,
-                 "}")
+  
+  categoryMetaData <- getDefinitionsMetadata(baseUrl = baseUrl, category = category)
+  
+  while(name %in% categoryMetaData$name){
+    name <- paste0(name,"(1)")
+  }
+  
+  expression$createdDate <- NULL
+  expression$createdBy <- NULL
+  expression$modifiedBy <- NULL
+  expression$modifiedDate <- NULL
+  expression$hashCode <- NULL
+  
+  if (category %in% c("cohort", "conceptSet")){
+    
+    # convert R-object to JSON expression.  
+    jsonExpression <- RJSONIO::toJSON(expression)
+    # create json body
+    json <- paste0("{\"name\":\"", as.character(name), "\",\"expressionType\": \"SIMPLE_EXPRESSION\", \"expression\":",
+                   jsonExpression,
+                   "}")
+  }
+  
+  if (category %in% c("pathway")){
+    expression$name <- as.character(name)
+    # convert R-object to JSON expression.  
+    json <- RJSONIO::toJSON(expression)
+  }
+  
   # POST Json
   url <- paste0(baseUrl, "/", argument$categoryUrl, "/")
   if (category == "characterization") {
     url <- paste0(url, argument$categoryUrlPostExpression, "/")
   }
   response <- .postJson(url = url, json = json)
-
+  
   if (!response$status_code == 200) {
     definitionsMetaData <- getDefinitionsMetadata(baseUrl = baseUrl, category = category)
     if (name %in% definitionsMetaData$name) {
@@ -88,7 +111,13 @@ postDefinition <- function(baseUrl, name, category, definition) {
   response <- httr::content(response)
   structureCreated <- response
   response$expression <- NULL
-
+  
+  if(category %in% c("pathway")){
+    response$targetCohorts <- NULL
+    response$eventCohorts <- NULL
+    response$createdBy <- NULL
+  }
+  
   # create expression in the structure required to POST or PUT
   if (category %in% c("conceptSet")) {
     items <- convertConceptSetDefinitionToTable(conceptSetDefinition = definition) %>% dplyr::mutate(id = dplyr::row_number(),
@@ -119,7 +148,7 @@ postDefinition <- function(baseUrl, name, category, definition) {
       stop()
     }
   }
-
+  
   if (category %in% c("characterization")) {
     characterizationPostObject <- structureCreated
     characterizationPostObject$cohorts <- definition$expression$cohorts
@@ -129,7 +158,7 @@ postDefinition <- function(baseUrl, name, category, definition) {
     characterizationPostObject$strataOnly <- definition$expression$strataOnly
     characterizationPostObject$strataConceptSets <- definition$expression$strataConceptSets
     characterizationPostObject$stratifiedBy <- definition$expression$stratifiedBy
-
+    
     expressionCharacterization <- list()
     expressionCharacterization$name <- characterizationPostObject$name
     expressionCharacterization$cohorts <- characterizationPostObject$cohorts
@@ -145,10 +174,10 @@ postDefinition <- function(baseUrl, name, category, definition) {
     expressionCharacterization$packageName <- characterizationPostObject$packageName
     expressionCharacterization$organizationName <- characterizationPostObject$organizationName
     expressionCharacterization$stratifiedBy <- characterizationPostObject$stratifiedBy
-
+    
     expressionCharacterization <- jsonlite::toJSON(x = expressionCharacterization,
                                                    auto_unbox = TRUE)
-
+    
     response <- .putJson(url = paste0(baseUrl,
                                       "/",
                                       argument$categoryUrl,

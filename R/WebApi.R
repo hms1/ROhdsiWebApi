@@ -29,7 +29,9 @@
 getPriorityVocabularyKey <- function(baseUrl) {
   .checkBaseUrl(baseUrl)
   url <- gsub("@baseUrl", baseUrl, "@baseUrl/source/priorityVocabulary")
-  json <- httr::GET(url)
+  json <- httr::GET(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                            Sys.getenv("ATLAS_USER"),
+                                                                            Sys.getenv("ATLAS_PASSWORD"))))
   json <- httr::content(json)
   json$sourceKey
 }
@@ -52,7 +54,9 @@ getWebApiVersion <- function(baseUrl) {
                              " . Failed while retrieving WebApi information.")
     stop()
   }
-  response <- httr::GET(url)
+  response <- httr::GET(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                                Sys.getenv("ATLAS_USER"),
+                                                                                Sys.getenv("ATLAS_PASSWORD"))))
   if (response$status %in% c(200)) {
     version <- (httr::content(response))$version
   } else {
@@ -80,7 +84,9 @@ getWebApiVersion <- function(baseUrl) {
 getCdmSources <- function(baseUrl) {
   .checkBaseUrl(baseUrl)
   url <- sprintf("%s/source/sources", baseUrl)
-  request <- httr::GET(url)
+  request <- httr::GET(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                               Sys.getenv("ATLAS_USER"),
+                                                                               Sys.getenv("ATLAS_PASSWORD"))))
   httr::stop_for_status(request)
   sources <- httr::content(request)
 
@@ -170,4 +176,34 @@ isValidSourceKey <- function(sourceKeys, baseUrl) {
   cdmSources <- getCdmSources(baseUrl)
   validSourceKeys <- cdmSources %>% dplyr::select(.data$sourceKey) %>% dplyr::distinct() %>% dplyr::pull(.data$sourceKey)
   return(sourceKeys %in% validSourceKeys)
+}
+
+
+#' Get the data sources in the WebAPI instance
+#'
+#' @details
+#' Obtains the data sources configured in the WebAPI instance
+#'
+#' @param baseUrl        The base URL for the WebApi instance, for example:
+#'                       "http://server.org:80/WebAPI".
+#' @param userLogin      Login
+#' @param userPassword   Password
+#'
+#' @return
+#' A data frame of data source information
+#'
+#' @export
+getBearerDbLogin <- function(baseUrl, userLogin, userPassword) {
+  
+  authUrl <- paste0(baseUrl, "/user/login/db")
+  
+  # Array with form options
+  login <- list(login = userLogin, password = userPassword)
+  
+  # Execute call to authenticate
+  r <- httr::POST(authUrl, body = login, encode = "form")
+  
+  bearer <- paste0("Bearer ", httr::headers(r)$bearer)
+  
+  return(bearer)
 }

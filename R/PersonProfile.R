@@ -56,7 +56,9 @@ getPersonProfile <- function(baseUrl, sourceKey, personId, indexCohortId = NULL)
     url <- sprintf("%1s/%2s/person/%3s?cohort=%4s", baseUrl, sourceKey, personId, indexCohortId)
   }
 
-  getUrl <- httr::GET(url)
+  getUrl <- httr::GET(url, httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                              Sys.getenv("ATLAS_USER"),
+                                                                              Sys.getenv("ATLAS_PASSWORD"))))
   if (httr::http_type(getUrl) != "application/json") {
     stop(paste0(url, " API for did not return json"), call. = FALSE)
   }
