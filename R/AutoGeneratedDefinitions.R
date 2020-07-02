@@ -1554,6 +1554,7 @@ detectPathwaysByName <- function(pattern, negate = FALSE, baseUrl) {
 #'                            will be converted to JSON expression by function and posted into the
 #'                            WebApi. Note: only limited checks are performed in R to check the
 #'                            validity of this expression.
+#' @param postCohorts         Post pathway cohorts. Logical.
 #' @return
 #' This function will return a dataframe object with one row describing the posted WebApi expression
 #' and its details. If unsuccessful a STOP message will be shown.
