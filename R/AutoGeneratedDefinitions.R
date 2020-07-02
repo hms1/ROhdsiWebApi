@@ -1567,6 +1567,8 @@ detectPathwaysByName <- function(pattern, negate = FALSE, baseUrl) {
 #' @export
 postPathwayDefinition <- function(name, pathwayDefinition, baseUrl, postCohorts = TRUE) {
 
+  if ("expression" %in% names(pathwayDefinition)) {pathwayDefinition <- pathwayDefinition$expression}
+  
   if(postCohorts){
     
     postModifyCohortDef <- function(cohortDef){
