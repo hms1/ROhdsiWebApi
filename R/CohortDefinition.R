@@ -271,9 +271,12 @@ getCohortSql <- function(cohortDefinition, baseUrl, generateStats = TRUE) {
   listGenerateStats <- list(expression = expression, options = list(generateStats = generateStats))
 
   validJsonExpression <- RJSONIO::toJSON(listGenerateStats, digits = 23)
-  response <- httr::POST(url, body = validJsonExpression, config = httr::add_headers(httpheader),  httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
-                                                                                                                                                      Sys.getenv("ATLAS_USER"),
-                                                                                                                                                      Sys.getenv("ATLAS_PASSWORD"))))
+  response <- httr::POST(url,
+                         body = validJsonExpression,
+                         config = httr::add_headers(httpheader),
+                         httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                            Sys.getenv("ATLAS_USER"),
+                                                                            Sys.getenv("ATLAS_PASSWORD"))))
   if (response$status == 200) {
     response <- httr::content(response)
     sql <- response$templateSql

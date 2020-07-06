@@ -54,10 +54,10 @@
                                      "pathway")) %>% dplyr::mutate(categoryFirstUpper = paste0(toupper(substr(.data$categoryStandard, 1, 1)), substr(.data$categoryStandard, 2, nchar(.data$categoryStandard)))) %>% dplyr::mutate(categoryUrl = dplyr::case_when(categoryStandard ==
     "conceptSet" ~ "conceptset", categoryStandard == "cohort" ~ "cohortdefinition", categoryStandard ==
     "characterization" ~ "cohort-characterization", categoryStandard == "pathway" ~ "pathway-analysis", categoryStandard == "incidenceRate" ~ "ir", categoryStandard == "estimation" ~ "estimation", categoryStandard == "prediction" ~ "prediction", TRUE ~ "")) %>% dplyr::mutate(categoryUrlGetExpression = dplyr::case_when(categoryStandard ==
-    "conceptSet" ~ "expression", categoryStandard == "characterization" ~ "design", categoryStandard == "pathway" ~ "export", TRUE ~ "")) %>%
-    dplyr::mutate(categoryUrlGenerationInformation = dplyr::case_when(categoryStandard == "cohort" ~
-      "info", categoryStandard == "characterization" ~ "generation", categoryStandard == "pathway" ~
-      "generation", categoryStandard == "incidenceRate" ~ "info", TRUE ~ "")) %>% dplyr::mutate(categoryUrlGeneration = dplyr::case_when(categoryStandard ==
+    "conceptSet" ~ "expression", categoryStandard == "characterization" ~ "design", categoryStandard ==
+    "pathway" ~ "export", TRUE ~ "")) %>% dplyr::mutate(categoryUrlGenerationInformation = dplyr::case_when(categoryStandard ==
+    "cohort" ~ "info", categoryStandard == "characterization" ~ "generation", categoryStandard ==
+    "pathway" ~ "generation", categoryStandard == "incidenceRate" ~ "info", TRUE ~ "")) %>% dplyr::mutate(categoryUrlGeneration = dplyr::case_when(categoryStandard ==
     "cohort" ~ "generate", categoryStandard == "characterization" ~ "generation", categoryStandard ==
     "pathway" ~ "generation", categoryStandard == "incidenceRate" ~ "execute", TRUE ~ "")) %>% dplyr::mutate(categoryUrlCancel = dplyr::case_when(categoryStandard ==
     "cohort" ~ "cancel", categoryStandard == "characterization" ~ "generation", categoryStandard ==
@@ -100,9 +100,9 @@
     x <- lubridate::as_datetime(x = x,
                                 tz = Sys.timezone(),
                                 lubridate::guess_formats(x = x, orders = c("y-m-d H:M",
-                                                                           "y-m-d H:M:S",
-                                                                           "ymdHMS",
-                                                                           "ymd HMS"))[1])
+                                                                                                       "y-m-d H:M:S",
+                                                                                                       "ymdHMS",
+                                                                                                       "ymd HMS"))[1])
     x <- min(x)
   }
   return(x)
@@ -163,10 +163,7 @@
              body = json,
              encode = "json",
              config = httr::add_headers(.headers = c(`Content-Type` = "application/json",
-                                                     Authorization = getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD"))
-                                                     )
-                                        )
-             )
+                                                     Authorization = getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))))
 }
 .putJson <- function(url, json) {
   # PUT the JSON
@@ -174,7 +171,5 @@
             body = json,
             encode = "json",
             config = httr::add_headers(.headers = c(`Content-Type` = "application/json"),
-                                       Authorization = getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD"))
-                                       )
-            )
+                                       Authorization = getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD"))))
 }

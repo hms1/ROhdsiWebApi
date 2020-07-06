@@ -49,9 +49,12 @@ getConcepts <- function(conceptIds,
   url <- sprintf("%s/vocabulary/%s/lookup/identifiers", baseUrl, vocabularySourceKey)
   body <- RJSONIO::toJSON(conceptIds, digits = 23)
   httpheader <- c(Accept = "application/json; charset=UTF-8", `Content-Type` = "application/json")
-  req <- httr::POST(url, body = body, config = httr::add_headers(httpheader), httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
-                                                                                                                                 Sys.getenv("ATLAS_USER"),
-                                                                                                                                 Sys.getenv("ATLAS_PASSWORD"))))
+  req <- httr::POST(url,
+                    body = body,
+                    config = httr::add_headers(httpheader),
+                    httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                       Sys.getenv("ATLAS_USER"),
+                                                                       Sys.getenv("ATLAS_PASSWORD"))))
   req <- httr::content(req)
 
   lists <- lapply(req, function(x) {
@@ -105,9 +108,12 @@ getSourceConcepts <- function(conceptIds,
   url <- sprintf("%s/vocabulary/%s/lookup/mapped", baseUrl, vocabularySourceKey)
   body <- RJSONIO::toJSON(conceptIds, digits = 23)
   httpheader <- c(Accept = "application/json; charset=UTF-8", `Content-Type` = "application/json")
-  req <- httr::POST(url, body = body, config = httr::add_headers(httpheader),  httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
-                                                                                                                                  Sys.getenv("ATLAS_USER"),
-                                                                                                                                  Sys.getenv("ATLAS_PASSWORD"))))
+  req <- httr::POST(url,
+                    body = body,
+                    config = httr::add_headers(httpheader),
+                    httr::add_headers(Authorization = getBearerDbLogin(baseUrl,
+                                                                       Sys.getenv("ATLAS_USER"),
+                                                                       Sys.getenv("ATLAS_PASSWORD"))))
   req <- httr::content(req)
 
   lists <- lapply(req, function(x) {

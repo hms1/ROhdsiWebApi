@@ -194,16 +194,16 @@ isValidSourceKey <- function(sourceKeys, baseUrl) {
 #'
 #' @export
 getBearerDbLogin <- function(baseUrl, userLogin, userPassword) {
-  
+
   authUrl <- paste0(baseUrl, "/user/login/db")
-  
+
   # Array with form options
   login <- list(login = userLogin, password = userPassword)
-  
+
   # Execute call to authenticate
   r <- httr::POST(authUrl, body = login, encode = "form")
-  
+
   bearer <- paste0("Bearer ", httr::headers(r)$bearer)
-  
+
   return(bearer)
 }
