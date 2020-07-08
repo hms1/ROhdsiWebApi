@@ -29,7 +29,7 @@
 getPriorityVocabularyKey <- function(baseUrl) {
   .checkBaseUrl(baseUrl)
   url <- gsub("@baseUrl", baseUrl, "@baseUrl/source/priorityVocabulary")
-  json <- httr::GET(url)
+  json <- httr::GET(url, config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))))
   json <- httr::content(json)
   json$sourceKey
 }
@@ -52,7 +52,7 @@ getWebApiVersion <- function(baseUrl) {
                              " . Failed while retrieving WebApi information.")
     stop()
   }
-  response <- httr::GET(url)
+  response <- httr::GET(url, config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))))
   if (response$status %in% c(200)) {
     version <- (httr::content(response))$version
   } else {
@@ -80,7 +80,7 @@ getWebApiVersion <- function(baseUrl) {
 getCdmSources <- function(baseUrl) {
   .checkBaseUrl(baseUrl)
   url <- sprintf("%s/source/sources", baseUrl)
-  request <- httr::GET(url)
+  request <- httr::GET(url, config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))))
   httr::stop_for_status(request)
   sources <- httr::content(request)
 

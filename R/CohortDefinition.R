@@ -261,7 +261,7 @@ getCohortSql <- function(cohortDefinition, baseUrl, generateStats = TRUE) {
   checkmate::reportAssertions(errorMessage)
 
   url <- paste0(baseUrl, "/", argument$categoryUrl, "/sql/")
-  httpheader <- c(Accept = "application/json; charset=UTF-8", `Content-Type` = "application/json")
+  httpheader <- c(Accept = "application/json; charset=UTF-8", `Content-Type` = "application/json", Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))
 
   if ("expression" %in% names(cohortDefinition)) {
     expression <- cohortDefinition$expression

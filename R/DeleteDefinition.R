@@ -44,7 +44,7 @@ deleteDefinition <- function(id, baseUrl, category) {
   checkmate::reportAssertions(errorMessage)
 
   url <- paste0(baseUrl, "/", argument$categoryUrl, "/", id)
-  request <- httr::DELETE(url)
+  request <- httr::DELETE(url, config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))))
 
   if (!request$status %in% c(200, 204)) {
     if (!isTRUE(isValidId(ids = id, baseUrl = baseUrl, category = category))) {

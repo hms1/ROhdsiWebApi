@@ -45,7 +45,9 @@ getDefinition <- function(id, category, baseUrl) {
   checkmate::reportAssertions(errorMessage)
 
   url <- paste0(baseUrl, "/", argument$categoryUrl, "/", id)
-  response <- httr::GET(url)
+  response <- httr::GET(url,
+                        config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD"))))
+                        )
 
   if (!response$status_code == 200) {
     definitionsMetaData <- getDefinitionsMetadata(baseUrl = baseUrl, category = category)
@@ -75,7 +77,9 @@ getDefinition <- function(id, category, baseUrl) {
                                 id,
                                 "/",
                                 argument$categoryUrlGetExpression)
-        expression <- httr::GET(urlExpression)
+        expression <- httr::GET(urlExpression,
+                                config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD"))))
+                                )
         expression <- httr::content(expression)
         response$expression <- expression
       } else {

@@ -66,7 +66,8 @@ getGenerationInformation <- function(id, category, baseUrl) {
   ##### cohort/characterization/pathway ####
   if (argument$categoryStandard %in% c("cohort", "characterization", "pathway")) {
     url <- urlRoot
-    response <- httr::GET(url)
+    response <- httr::GET(url, config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))))
+    
     if (!response$status_code == 200) {
       definitionsMetaData <- getDefinitionsMetadata(baseUrl = baseUrl, category = category)
       if (!id %in% definitionsMetaData$id) {
@@ -107,7 +108,7 @@ getGenerationInformation <- function(id, category, baseUrl) {
     # looping through sourceKeys. https://github.com/OHDSI/ROhdsiWebApi/issues/102
     for (i in (1:length(validSourceKeys))) {
       url <- paste0(urlRoot, "/", validSourceKeys[[i]])
-      response <- httr::GET(url)
+      response <- httr::GET(url, config = httr::add_headers(.headers = c(Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD")))))
       if (!response$status_code == 200) {
         definitionsMetaData <- getDefinitionsMetadata(baseUrl = baseUrl, category = category)
         if (!id %in% definitionsMetaData$id) {

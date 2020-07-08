@@ -162,12 +162,31 @@
   httr::POST(url = url,
              body = json,
              encode = "json",
-             config = httr::add_headers(.headers = c(`Content-Type` = "application/json")))
+             config = httr::add_headers(.headers = c(`Content-Type` = "application/json",
+                                                     Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD"))
+                                                     )))
 }
 .putJson <- function(url, json) {
   # PUT the JSON
   httr::PUT(url = url,
             body = json,
             encode = "json",
-            config = httr::add_headers(.headers = c(`Content-Type` = "application/json")))
+            config = httr::add_headers(.headers = c(`Content-Type` = "application/json",
+                                                    Authorization = .getBearerDbLogin(baseUrl, Sys.getenv("ATLAS_USER"), Sys.getenv("ATLAS_PASSWORD"))
+                                                    )))
+}
+
+.getBearerDbLogin <- function(baseUrl, userLogin, userPassword) {
+  
+  authUrl <- paste0(baseUrl, "/user/login/db")
+  
+  # Array with form options
+  login <- list(login = userLogin, password = userPassword)
+  
+  # Execute call to authenticate
+  r <- httr::POST(authUrl, body = login, encode = "form")
+  
+  bearer <- paste0("Bearer ", httr::headers(r)$bearer)
+  
+  return(bearer)
 }
